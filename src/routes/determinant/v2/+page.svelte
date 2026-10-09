@@ -3,7 +3,6 @@
 	// 1. matrix → unit square area, 2. area ↔ determinant (no formula), 3. det = 0
 	import { onMount } from "svelte";
 	import { fly } from "svelte/transition";
-	import { base } from "$app/paths";
 	import inView from "$actions/inView.js";
 	import Meta from "$components/Meta.svelte";
 	import Tex from "$components/matrix/Tex.svelte";
@@ -90,7 +89,7 @@
 		<!-- Scrolling steps -->
 		<article class="w-[36rem] shrink-0 bg-gradient-to-l from-base-100 via-base-300 via-90% px-10 py-12">
 			<header class="flex flex-col gap-3 mb-[20vh]">
-				<a href="{base}/" class="link link-hover text-sm opacity-70">← Back to The Matrix Arcade</a>
+				<a href="../../" class="link link-hover text-sm opacity-70">← Back to The Matrix Arcade</a>
 				<h1 class="font-display text-4xl">Determinants & Invertibility</h1>
 				<p class="opacity-70">Scroll down to explore.</p>
 			</header>

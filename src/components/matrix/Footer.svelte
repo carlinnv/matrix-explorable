@@ -11,6 +11,24 @@
 <!-- TODO: Credits, source of the models etc. -->
 
 <footer class="max-w-prose mx-auto p-5 prose prose-xl pt-16 pb-28">
+	<!-- Link to the determinant extension (CS375 modification) -->
+	<section class="flex flex-col items-center gap-4 text-center pb-10">
+		<h2 class="m-0">Next: Determinants & Invertibility</h2>
+		<p class="m-0">
+			See how a 2×2 matrix changes the area of the unit square, and why a matrix
+			with a determinant of 0 can't be undone.
+		</p>
+		<a href="determinant/v4/" class="btn btn-primary not-prose">Explore determinants →</a>
+		<p class="m-0 text-base opacity-70">
+			Earlier versions:
+			<a href="determinant/">V1</a> ·
+			<a href="determinant/v2/">V2</a> ·
+			<a href="determinant/v3/">V3</a>
+		</p>
+	</section>
+
+	<div class="divider" />
+
 	<section class="flex flex-col items-center gap-8 text-center pb-10">
 		<div>
 			<p>Like my stuff? :)</p>

@@ -1,5 +1,4 @@
 <script>
-	import { base } from "$app/paths";
 	import Meta from "$components/Meta.svelte";
 	import UnitSquarePlot from "$components/determinant/UnitSquarePlot.svelte";
 	import DeterminantPanel from "$components/determinant/DeterminantPanel.svelte";
@@ -15,7 +14,7 @@
 <div class="h-screen overflow-y-auto bg-base-300">
 	<div class="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-6">
 		<header class="flex flex-col gap-2">
-			<a href="{base}/" class="link link-hover text-sm opacity-70">
+			<a href="../" class="link link-hover text-sm opacity-70">
 				← Back to The Matrix Arcade
 			</a>
 			<h1 class="font-display text-3xl lg:text-4xl">Determinants & Invertibility</h1>
