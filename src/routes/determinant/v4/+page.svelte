@@ -1,7 +1,8 @@
 <script>
 	// Version 4 (final revision, SPEC §9): Version 3 plus a section on losing information
 	// 1. matrix → unit square area, 2. area ↔ determinant (no formula), 3. det = 0,
-	// 4. two inputs, two outputs, 5. two inputs, one output: why det = 0 means not invertible
+	// 4. two inputs, two outputs, 5. two inputs, one output: why det = 0 means not invertible,
+	// 6. not every input collides, 7. play around with it
 	import { onMount } from "svelte";
 	import { fly, fade } from "svelte/transition";
 	import NumberSpinner from "svelte-number-spinner";
@@ -27,6 +28,9 @@
 		entriesInRange,
 		onInputGrid,
 		flattenOntoFirstColumn,
+		nullDirection,
+		projectOntoLine,
+		snapToSquashedLine,
 		isNearlyZero,
 		formatNumber
 	} from "$utils/determinant.js";
@@ -62,9 +66,13 @@
 	const COLLAPSED_MATRIX = flattenOntoFirstColumn(START_MATRIX, entryMax);
 	const START_U = [1, 1];
 	const START_V = [2, -1];
-	// Fixed in sections 4–5, editable in section 6
+	// Fixed in sections 4–5, v draggable in section 6, both editable in section 7
 	let u = [...START_U];
 	let v = [...START_V];
+	// Section 6: the conclusion appears once v has been dragged off the line
+	let movedOff = false;
+	// How close (in grid units) v must get to the dashed line to snap onto it
+	const SNAP_DISTANCE = 0.3;
 	const vectorMax = 3;
 	// Orange is the original's z-axis color; orange/yellow passed the dataviz palette
 	// validator's colorblind check on the dark background
@@ -73,10 +81,16 @@
 	// Unit square and basis vectors on the two grids start hidden, to keep the focus on u and v
 	let showBasis = false;
 
-	// The matrix can't be edited in sections 4–5; only the Collapse button changes it.
-	// Section 6 unlocks everything.
-	$: locked = active === 4 || active === 5;
+	// The matrix can't be edited in sections 4–6; only the Collapse button changes it.
+	// Section 7 unlocks everything.
+	$: locked = active >= 4 && active <= 6;
 	$: showVectors = active >= 4;
+
+	function restoreStoryVectors() {
+		u = [...START_U];
+		v = [...START_V];
+		movedOff = false;
+	}
 
 	function enterSection4() {
 		// Coming down from section 3: start the story from the invertible matrix
@@ -85,15 +99,47 @@
 	}
 
 	function enterSection5() {
-		// Coming back up from section 6: restore the story's collapsed matrix and vectors
+		// Coming back up from section 6: put v back on u's line
 		// so the section 5 text (both land on the same output) stays true
-		if (active === 6) {
-			setMatrix(COLLAPSED_MATRIX);
-			u = [...START_U];
-			v = [...START_V];
-		}
+		if (active === 6) restoreStoryVectors();
 		active = 5;
 	}
+
+	function enterSection6() {
+		// Section 6 always shows the story: collapsed matrix, u, and v on u's line.
+		// (Coming back from section 7 undoes the student's experiments.)
+		setMatrix(COLLAPSED_MATRIX);
+		restoreStoryVectors();
+		active = 6;
+	}
+
+	const clampEntry = (x) => Math.min(Math.max(x, -vectorMax), vectorMax);
+	const roundTenth = (x) => parseFloat((Math.round(x * 10) / 10).toFixed(1));
+
+	// Section 6: move v to a dragged point. Near the dashed line it snaps exactly onto it;
+	// elsewhere it moves in 0.1 steps like the number inputs.
+	// Arrow keys don't snap, so keyboard users can step off the line.
+	function moveV({ detail: { point, keyboard } }) {
+		const p = point.map(clampEntry);
+		const n = nullDirection($detMatrix);
+		if (n && !keyboard) {
+			const onLine = projectOntoLine(p, u, n);
+			if (Math.hypot(onLine[0] - p[0], onLine[1] - p[1]) < SNAP_DISTANCE) {
+				// Nearest point on the line with tidy (0.1-grid) coordinates
+				v = snapToSquashedLine($detMatrix, p, u);
+				return;
+			}
+		}
+		v = p.map(roundTenth);
+	}
+
+	// Is v on the line of inputs that land where u lands?
+	$: squashDir = nullDirection($detMatrix);
+	$: vOnLine =
+		squashDir !== null &&
+		isNearlyZero(Math.hypot(...diff(projectOntoLine(v, u, squashDir), v)), 1e-6);
+	$: if (active === 6 && !vOnLine) movedOff = true;
+	const diff = ([x1, y1], [x2, y2]) => [x1 - x2, y1 - y2];
 
 	// NumberSpinner doesn't forward aria attributes, so label its inputs directly
 	function labelInputs(node, name) {
@@ -110,14 +156,16 @@
 	$: Av = apply($detMatrix, v);
 	const fmtVec = ([x, y]) => `(${formatNumber(x)}, ${formatNumber(y)})`;
 
-	// Section 6 status
+	// Section 7 status
 	const samePoint = (p, q) => isNearlyZero(Math.hypot(p[0] - q[0], p[1] - q[1]), 1e-6);
 	$: sameInput = samePoint(u, v);
 	$: sameOutput = samePoint(Au, Av);
 
-	// Section 6 hint: only meaningful when A squashes the plane onto a line
+	// Section 7 hint: only meaningful when A squashes the plane onto a line
 	let showHint = false;
-	$: hintAvailable = active === 6 && kind === "line";
+	$: hintAvailable = active === 7 && kind === "line";
+	// Section 6 always shows the line of inputs that land where u lands
+	$: showInputLine = active === 6 || (showHint && hintAvailable);
 </script>
 
 <Meta
@@ -185,7 +233,9 @@
 						{colorU}
 						{colorV}
 						{showBasis}
-						showInputLine={showHint && hintAvailable}
+						{showInputLine}
+						draggableV={active === 6}
+						on:movev={moveV}
 					/>
 				</div>
 			{:else}
@@ -365,8 +415,9 @@
 				{#if kind === "area"}
 					<p>
 						We start with an invertible matrix (<Tex expr="\det(A)" /> = {formatNumber(det)}).
-						It sends <b>u</b> to {fmtVec(Au)} and <b>v</b> to {fmtVec(Av)}.
-						Two different inputs give <b>two different outputs</b>.
+						It sends <b>u</b> to {fmtVec(Au)} and <b>v</b> to {fmtVec(Av)}
+						(labeled A·u and A·v on the right grid). Two different inputs give
+						<b>two different outputs</b>.
 					</p>
 					<Action>
 						<div class="flex flex-col gap-3">
@@ -429,16 +480,50 @@
 				class="step prose prose-lg"
 				class:inactive={active !== 6}
 				use:inView={{ top: band, bottom: band }}
-				on:enter={() => (active = 6)}
+				on:enter={enterSection6}
 			>
-				<h2>6. Play around with it</h2>
+				<h2>6. Not every input collides</h2>
+				<p>
+					Does a collapsed <Tex expr="A" /> send <i>every</i> input to the same place?
+					The dashed line on the left shows every input that lands where <b>u</b> lands.
+				</p>
+				<Action>
+					<p class="m-0">
+						Drag the tip of <b>v</b> off the dashed line, then back onto it. It snaps
+						onto the line when you get close.
+					</p>
+				</Action>
+				{#if vOnLine}
+					<p>
+						<b>v</b> is on the dashed line, so it lands right on top of <b>u</b>'s
+						output: {fmtVec(Av)}.
+					</p>
+				{:else}
+					<p>
+						<b>v</b> is off the dashed line, so <Tex expr="A" /> sends it somewhere
+						else: {fmtVec(Av)} instead of {fmtVec(Au)}.
+					</p>
+				{/if}
+				{#if movedOff}
+					<p transition:fade={{ duration: 200 }}>
+						So a collapsed matrix doesn't send everything to one point. But for
+						<Tex expr="A" /> to be impossible to undo, it's enough that <i>some</i>
+						different inputs share an output. Not every pair has to collide.
+					</p>
+				{/if}
+			</section>
+
+			<!-- Step 7 -->
+			<section
+				class="step prose prose-lg"
+				class:inactive={active !== 7}
+				use:inView={{ top: band, bottom: band }}
+				on:enter={() => (active = 7)}
+			>
+				<h2>7. Play around with it</h2>
 				<p>
 					Now everything is unlocked. Change <Tex expr="A" />, <b>u</b> and <b>v</b>, and
 					watch when two different inputs end up at the same output.
-				</p>
-				<p>
-					For <Tex expr="A" /> to be impossible to undo, it's enough that <i>some</i>
-					different inputs share an output. Not every pair has to collide.
 				</p>
 				<Action>
 					<div class="flex flex-col gap-3 w-full not-prose text-base">
@@ -471,14 +556,14 @@
 									aria-pressed={showHint}
 									on:click={() => (showHint = !showHint)}
 								>
-									{showHint ? "Hide" : "Show"} inputs that land on A·u
+									{showHint ? "Hide" : "Show"} inputs that land where u lands
 								</button>
 							{/if}
 						</div>
 						{#if showHint && hintAvailable}
 							<p class="m-0 text-sm opacity-80" transition:fade={{ duration: 200 }}>
-								Every input on the dashed line lands on the same output as <b>u</b>.
-								Inputs off the line land somewhere else.
+								Every input on the dashed line lands where <b>u</b> lands. Inputs off
+								the line land somewhere else.
 							</p>
 						{/if}
 					</div>
@@ -501,8 +586,8 @@
 				{:else}
 					<p>
 						<Tex expr="A" /> is not invertible, but these two inputs still land on
-						different outputs. Can you move <b>v</b> so it lands on the same output as
-						<b>u</b>? Stuck? Try the hint button above.
+						different outputs. Can you move <b>v</b> so it lands where <b>u</b> lands?
+						Stuck? Try the hint button above.
 					</p>
 				{/if}
 			</section>

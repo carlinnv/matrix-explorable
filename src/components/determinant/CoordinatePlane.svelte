@@ -7,6 +7,8 @@
 
 	export let bound = 6.5;
 	export let title = "";
+	// The <svg> element, for converting pointer positions to plot coordinates
+	export let svgEl = null;
 
 	$: unit = bound / 6.5;
 	// Keep roughly 6–7 gridlines per side as the plot zooms out
@@ -26,6 +28,7 @@
 </script>
 
 <svg
+	bind:this={svgEl}
 	viewBox="{-bound} {-bound} {2 * bound} {2 * bound}"
 	class="w-full h-full"
 	role="img"

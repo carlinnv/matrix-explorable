@@ -1,6 +1,7 @@
 <script>
 	// Side-by-side input and output planes for two vectors u and v (Version 4+).
 	// When A·u = A·v the outputs are drawn on top of each other with one label.
+	import { createEventDispatcher } from "svelte";
 	import { tweened } from "svelte/motion";
 	import { cubicOut } from "svelte/easing";
 	import colors from "tailwindcss/colors";
@@ -25,6 +26,40 @@
 	export let showBasis = true;
 	// Section 6 hint: dashed line of inputs that land on the same output as u
 	export let showInputLine = false;
+
+	// Let the student drag v's tip on the input plane. Emits `movev` with
+	// { point: [x, y], keyboard } in plot coordinates; the page decides where v goes.
+	export let draggableV = false;
+
+	const dispatch = createEventDispatcher();
+	let inputSvg;
+	let dragging = false;
+
+	function toPlot(e) {
+		const p = inputSvg.createSVGPoint();
+		p.x = e.clientX;
+		p.y = e.clientY;
+		const q = p.matrixTransform(inputSvg.getScreenCTM().inverse());
+		return [q.x, -q.y];
+	}
+
+	function onPointerDown(e) {
+		dragging = true;
+		e.currentTarget.setPointerCapture(e.pointerId);
+		dispatch("movev", { point: toPlot(e), keyboard: false });
+	}
+
+	function onPointerMove(e) {
+		if (dragging) dispatch("movev", { point: toPlot(e), keyboard: false });
+	}
+
+	const keySteps = { ArrowLeft: [-0.1, 0], ArrowRight: [0.1, 0], ArrowUp: [0, 0.1], ArrowDown: [0, -0.1] };
+	function onKeydown(e) {
+		const step = keySteps[e.key];
+		if (!step) return;
+		e.preventDefault();
+		dispatch("movev", { point: [v[0] + step[0], v[1] + step[1]], keyboard: true });
+	}
 
 	$: n = nullDirection(matrix);
 	$: hintLine = showInputLine && n ? [-20, 20].map((t) => [u[0] + t * n[0], u[1] + t * n[1]]) : null;
@@ -59,7 +94,7 @@
 <div class="grid grid-cols-2 gap-4 h-full">
 	<!-- Inputs: before A -->
 	<div class="bg-base-200/40 rounded-xl min-h-0">
-		<CoordinatePlane title="Input (before A)" let:pt let:unit>
+		<CoordinatePlane title="Input (before A)" bind:svgEl={inputSvg} let:pt let:unit>
 			{#if showBasis}
 				<polygon
 					points={toPoints(pt, UNIT_SQUARE)}
@@ -105,6 +140,30 @@
 					class="font-serif font-bold select-none">{l.label}</text
 				>
 			{/each}
+
+			{#if draggableV}
+				{@const [hx, hy] = pt(v)}
+				<!-- Visible ring on v's tip, with a larger invisible hit area -->
+				<circle cx={hx} cy={hy} r="0.2" fill="none" stroke={colorV} stroke-width="0.05" />
+				<circle
+					cx={hx}
+					cy={hy}
+					r="0.45"
+					fill="transparent"
+					class="drag-handle"
+					class:dragging
+					role="slider"
+					tabindex="0"
+					aria-label="Vector v. Drag, or use the arrow keys, to move it"
+					aria-valuetext="v = ({v[0].toFixed(2)}, {v[1].toFixed(2)})"
+					aria-valuenow={v[0]}
+					on:pointerdown={onPointerDown}
+					on:pointermove={onPointerMove}
+					on:pointerup={() => (dragging = false)}
+					on:pointercancel={() => (dragging = false)}
+					on:keydown={onKeydown}
+				/>
+			{/if}
 		</CoordinatePlane>
 	</div>
 
@@ -156,3 +215,20 @@
 		</CoordinatePlane>
 	</div>
 </div>
+
+<style>
+	.drag-handle {
+		cursor: grab;
+		touch-action: none;
+		outline: none;
+	}
+
+	.drag-handle.dragging {
+		cursor: grabbing;
+	}
+
+	.drag-handle:focus-visible {
+		stroke: white;
+		stroke-width: 0.05;
+	}
+</style>

@@ -119,6 +119,29 @@ export function nullDirection(matrix, tolerance = ZERO_TOLERANCE) {
 	return [x / len, y / len];
 }
 
+// Closest point to p on the line through `through` with unit direction `dir`
+export function projectOntoLine(p, through, dir) {
+	const t = (p[0] - through[0]) * dir[0] + (p[1] - through[1]) * dir[1];
+	return [through[0] + t * dir[0], through[1] + t * dir[1]];
+}
+
+// For a singular matrix on the input grid: the point on the line through `through`
+// (itself on the grid) that A squashes to one output, closest to p and on the input grid.
+// Returns null for an invertible matrix.
+export function snapToSquashedLine(matrix, p, through, step = INPUT_STEP) {
+	if (!isSingular(matrix)) return null;
+
+	const { a, b, c, d } = matrix;
+	// Integer direction perpendicular to a nonzero row, reduced to the smallest grid step
+	const [rx, ry] = Math.hypot(a, b) > ZERO_TOLERANCE ? [-b, a] : Math.hypot(c, d) > ZERO_TOLERANCE ? [-d, c] : [1, 0];
+	const [ix, iy] = [Math.round(rx / step), Math.round(ry / step)];
+	const g = gcd(Math.abs(ix), Math.abs(iy)) || 1;
+	const [sx, sy] = [(ix / g) * step, (iy / g) * step];
+
+	const k = Math.round(((p[0] - through[0]) * sx + (p[1] - through[1]) * sy) / (sx * sx + sy * sy));
+	return [snap(through[0] + k * sx, step), snap(through[1] + k * sy, step)];
+}
+
 // Half-width of a square plot that fits all points, never smaller than `min`
 export function plotBound(points, min = 6.5) {
 	const extent = Math.max(0, ...points.flat().map(Math.abs));
