@@ -165,3 +165,14 @@ Eventually, the modified explainer must:
 - Include a working first version and a substantive revision documented through screenshots and development notes.
 
 For now, focus on producing a working, testable Version 1.
+
+## 9. Final Version Revision
+
+After playing around with the first iteration of the project (which resulted in versions 1, 2, and 3), I want to make a substantive revision. 
+
+This revision will add these features: 
+
+- a new section that describes invertibility in more depth; specifically what it means to "lose information" during a transformation
+- two side by side grids showing two distinct input vectors and their outputs post-matrix-multiplication
+- both vectors, post-transformation, should map to the same line
+- this section should show exactly why matrices with determinant 0 are not invertible
