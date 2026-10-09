@@ -458,3 +458,19 @@
 - **Resolution:** N/A.
 - **Testing:** `npm run build` succeeds with no warnings from the changed file; resolving the four new links in the built `index.html` against the GitHub Pages URL gives the correct V1–V4 addresses. Not yet viewed in a browser or on the live site.
 - **Next Steps (user, planned):** Commit, PR `version1` → `main`, merge; on `main`: `npm run build`, `make github`; check the live site, including the new footer links.
+
+## Entry 29 — README update
+
+- **Task:** "Can you help me edit the README? I want to credit the main visualization creator as well as list out the primary features I added."
+- **Changes (completed, drafted by Claude Code):** Rewrote README.md:
+  - Title and intro describing the project as an extension of The Matrix Arcade; links to the live site and directly to the determinant explainer (V4).
+  - **Credit** section for the original creator, Yi Zhe Ang: original repository, original live article, their ko-fi button, the original demo video and the original "Made with" tool list (moved from the top of the old README).
+  - **What I added:** the seven sections of the final version, plus the basis toggle and the footer link.
+  - **Versions** table with links and one-line summaries of V1–V4; pointers to DEVLOG.md and SPEC.md.
+  - **Running locally** and publishing instructions (`npm run build`, then `make github`).
+- **Files Modified:** [README.md](./README.md).
+- **Design decisions:** Kept all of the original README's content (ko-fi, video, tool credits) but moved it under Credit, so it is clearly attributed to the original creator rather than reading as the modifier's own. The README doesn't mention that much of the code was generated with Claude Code; whether to disclose that is left to the user.
+- **Issues Encountered:** None.
+- **Resolution:** N/A.
+- **Testing:** Checked the "adds no new dependencies" claim: `package.json` and the lock files are unchanged since commit `f1ed9ab` (before any modification work). Live-site links won't work until the site is deployed.
+- **Next Steps:** User reviews the README wording and commits it with the other pending changes.
