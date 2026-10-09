@@ -56,3 +56,25 @@
 - **Resolution:** (1) The tween receives copies (`{ ...matrix }`). (2) Replaced `<label>` with a `div` and a small action that sets `aria-label` on the spinner's input. (3) The original square's outline is now drawn after (on top of) the transformed shape. (4) Left as is (not part of this change).
 - **Testing:** `npm run build` succeeds with no warnings from the new files; `build/determinant/index.html` is prerendered and at the identity matrix contains the original and transformed squares with matching points and the "Invertible" status. Interactive behavior (spinner edits, animation, preset/reset buttons, line/point collapse rendering) has **not** been tested in a browser yet, by Claude Code or the user. The static `docs/` (GitHub Pages) folder was not rebuilt.
 - **Next Steps:** User checks the page in a browser and evaluates Version 1; decide whether to link `/determinant/` from the original explainer (that would modify an original file, so it needs permission); deploy to `docs/` when ready. Version 2 is not started.
+
+## Entry 4 — Version 1 milestone reflection (user)
+
+- **Task:** User's reflection on Version 1 after trying it.
+- **Changes:** None. This entry only records feedback.
+- **Files Modified:** [DEVLOG.md](./DEVLOG.md).
+- **User reflection (in the user's words, lightly condensed):**
+  - *What worked:* "The interactive matrix portion worked great. It is clear how changing the basis vectors changes the unit square. The 'collapse it' button also works great."
+  - *What was confusing:* "The explanation of the determinant is a little wordy, and the fact that the determinant relates to the area of the unit square is a little lost."
+  - *What I would change:* "The first section should focus on the interactive matrix and how it affects the unit square area. Similar to the style of the first one, where you 'scroll' through each of the concepts, the user should then scroll to the next concept, which is connecting the unit square area to the determinant. Instead of giving a wordy explanation of the determinant, it might be helpful to omit the equation and just show that the determinant is proportionate to the area."
+- **Testing:** User confirmed that the matrix inputs and the "Collapse it (det = 0)" preset work in the browser. The user did not mention the reset button, negative/fractional cases or the point-collapse case.
+- **Issues Encountered:** The det/area connection (learning objective 2) does not come across clearly; the explanation text is too long. The user's suggestion to omit `ad − bc` would also resolve the SPEC §1 vs. §4.4 conflict noted in Entry 3.
+- **Resolution:** Not implemented. These are candidate changes for Version 2, which has not been started (SPEC §5: wait for an explicit request).
+- **Next Steps (planned, not started):** Version 2 restructure into scroll-driven steps: (1) interactive matrix → unit square area; (2) area ↔ determinant connection without the explicit formula; then the existing invertibility explanation and preset.
+
+## Entry 5 — Version 1 user testing confirmation
+
+- **Task:** "The reset button works well. So do the negative, fractional, and single-point cases. Can you start on Version 2? Please keep in mind that there might be more versions."
+- **Changes:** None (log only).
+- **Files Modified:** [DEVLOG.md](./DEVLOG.md).
+- **Testing:** In addition to Entry 4, the user confirmed in the browser that the reset button works and that negative, fractional and single-point (all-zero matrix) cases behave correctly.
+- **Next Steps:** Begin Version 2 (see Entry 6).
