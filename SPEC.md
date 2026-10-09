@@ -131,28 +131,7 @@ Please follow these guidelines:
 8. Test mathematical correctness and visual behavior.
 9. Document important implementation decisions and problems encountered.
 
-## 7. Testing Requirements
-
-Test the visualization using matrices with:
-
-- Positive determinant
-- Negative determinant
-- Zero determinant
-- Fractional entries
-- Identity transformation
-
-Verify that:
-
-- Matrix inputs correctly update the transformed vertices.
-- The determinant calculation is accurate.
-- The transformed area equals the absolute value of the determinant.
-- Singular matrices collapse the square into a line segment or point.
-- The visualization behaves correctly for negative matrix values.
-- Reset and preset buttons work.
-
-If automated testing is already supported by the project, use it where appropriate.
-
-## 8. Iteration and Documentation
+## 7. Iteration and Documentation
 
 This project is part of an assignment that requires documenting an iterative development process.
 
@@ -176,7 +155,7 @@ After completing Version 1, stop and provide:
 
 Do not begin Version 2 until I explicitly request it.
 
-## 9. Final Project Requirements
+## 8. Final Project Requirements
 
 Eventually, the modified explainer must:
 
