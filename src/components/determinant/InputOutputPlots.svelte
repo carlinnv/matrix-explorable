@@ -1,18 +1,16 @@
 <script>
 	// Side-by-side input and output planes for two vectors u and v (Version 4+).
-	// For a singular matrix, v sits on u's dashed line, so both land on the same output.
+	// When A·u = A·v the outputs are drawn on top of each other with one label.
 	import { tweened } from "svelte/motion";
 	import { cubicOut } from "svelte/easing";
 	import colors from "tailwindcss/colors";
 	import CoordinatePlane from "./CoordinatePlane.svelte";
 	import Arrow from "./Arrow.svelte";
-	import { colorVector } from "$data/variables";
+	import { colorVector, colorX, colorY } from "$data/variables";
 	import {
 		UNIT_SQUARE,
 		apply,
 		transformUnitSquare,
-		nullDirection,
-		outputDirection,
 		plotBound,
 		isNearlyZero
 	} from "$utils/determinant.js";
@@ -22,6 +20,8 @@
 	export let v;
 	export let colorU;
 	export let colorV;
+	// Unit square and basis vectors (and their images), for context
+	export let showBasis = true;
 
 	// Copies, because input bindings mutate the store's object in place
 	const tween = { duration: 500, easing: cubicOut };
@@ -34,20 +34,12 @@
 	const bound = tweened(fitOutputs(matrix, u, v), tween);
 	$: bound.set(fitOutputs(matrix, u, v));
 
-	$: n = nullDirection(matrix);
-	$: outDir = outputDirection(matrix);
-
 	$: Au = apply($shown, u);
 	$: Av = apply($shown, v);
 	$: sameOutput = isNearlyZero(Math.hypot(...diff(apply(matrix, u), apply(matrix, v))), 1e-6);
 
 	const diff = ([x1, y1], [x2, y2]) => [x1 - x2, y1 - y2];
 	const toPoints = (pt, pts) => pts.map((p) => pt(p).join(",")).join(" ");
-	// A long segment through `p` in direction `dir` (the plot clips it)
-	const lineThrough = (p, dir, L) => [
-		[p[0] - L * dir[0], p[1] - L * dir[1]],
-		[p[0] + L * dir[0], p[1] + L * dir[1]]
-	];
 
 	// Put a label just past the tip of a vector
 	function labelPos(pt, [x, y], unit) {
@@ -55,7 +47,6 @@
 		return pt([x + (0.5 * unit * x) / len, y + (0.5 * unit * y) / len]);
 	}
 
-	const lineColor = colors.slate["300"];
 	const surface = colors.slate["950"];
 </script>
 
@@ -63,26 +54,17 @@
 	<!-- Inputs: before A -->
 	<div class="bg-base-200/40 rounded-xl min-h-0">
 		<CoordinatePlane title="Input (before A)" let:pt let:unit>
-			<polygon
-				points={toPoints(pt, UNIT_SQUARE)}
-				fill="white"
-				fill-opacity="0.12"
-				stroke="white"
-				stroke-width="0.04"
-				stroke-dasharray="0.12 0.08"
-			/>
-
-			{#if n}
-				{@const [p1, p2] = lineThrough(u, n, 20).map(pt)}
-				<line
-					x1={p1[0]}
-					y1={p1[1]}
-					x2={p2[0]}
-					y2={p2[1]}
-					stroke={lineColor}
-					stroke-width="0.05"
-					stroke-dasharray="0.2 0.15"
+			{#if showBasis}
+				<polygon
+					points={toPoints(pt, UNIT_SQUARE)}
+					fill="white"
+					fill-opacity="0.12"
+					stroke="white"
+					stroke-width="0.04"
+					stroke-dasharray="0.12 0.08"
 				/>
+				<Arrow {pt} to={[1, 0]} color={colorX} width={0.05} head={0.22} />
+				<Arrow {pt} to={[0, 1]} color={colorY} width={0.05} head={0.22} />
 			{/if}
 
 			<Arrow {pt} to={u} color={colorU} />
@@ -109,26 +91,18 @@
 	<!-- Outputs: after A -->
 	<div class="bg-base-200/40 rounded-xl min-h-0">
 		<CoordinatePlane title="Output (after A)" bound={$bound} let:pt let:unit>
-			<polygon
-				points={toPoints(pt, transformUnitSquare($shown))}
-				fill={colorVector}
-				fill-opacity="0.35"
-				stroke={colorVector}
-				stroke-width={0.07 * unit}
-				stroke-linejoin="round"
-			/>
-
-			{#if outDir}
-				{@const [p1, p2] = lineThrough([0, 0], outDir, 4 * $bound).map(pt)}
-				<line
-					x1={p1[0]}
-					y1={p1[1]}
-					x2={p2[0]}
-					y2={p2[1]}
-					stroke={lineColor}
-					stroke-width={0.05 * unit}
-					stroke-dasharray="{0.2 * unit} {0.15 * unit}"
+			{#if showBasis}
+				<polygon
+					points={toPoints(pt, transformUnitSquare($shown))}
+					fill={colorVector}
+					fill-opacity="0.35"
+					stroke={colorVector}
+					stroke-width={0.07 * unit}
+					stroke-linejoin="round"
 				/>
+				<!-- Images of the basis vectors: the columns of A -->
+				<Arrow {pt} to={[$shown.a, $shown.c]} color={colorX} width={0.05 * unit} head={0.22 * unit} />
+				<Arrow {pt} to={[$shown.b, $shown.d]} color={colorY} width={0.05 * unit} head={0.22 * unit} />
 			{/if}
 
 			<!-- A·v drawn wider underneath, so both stay visible when they overlap -->

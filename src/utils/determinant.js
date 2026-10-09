@@ -106,34 +106,6 @@ export function flattenOntoFirstColumn(matrix, limit = 3, step = INPUT_STEP) {
 	return { a, c, b: snap(k * ux * step), d: snap(k * uy * step) };
 }
 
-function normalize([x, y]) {
-	const len = Math.hypot(x, y);
-	return [x / len, y / len];
-}
-
-// Unit direction that a singular matrix squashes to zero (A·n = 0):
-// every input on a line in this direction lands on the same output.
-// Returns null for an invertible matrix.
-export function nullDirection(matrix, tolerance = ZERO_TOLERANCE) {
-	if (!isSingular(matrix, tolerance)) return null;
-
-	const { a, b, c, d } = matrix;
-	// A row orthogonal to n: rotate a nonzero row by 90°
-	if (Math.hypot(a, b) > tolerance) return normalize([-b, a]);
-	if (Math.hypot(c, d) > tolerance) return normalize([-d, c]);
-	// Zero matrix: every direction is squashed
-	return [1, 0];
-}
-
-// Unit direction of the line every output of a singular matrix lands on.
-// Returns null for an invertible matrix or the zero matrix (outputs are a point).
-export function outputDirection(matrix, tolerance = ZERO_TOLERANCE) {
-	if (collapseKind(matrix, tolerance) !== "line") return null;
-
-	const { a, b, c, d } = matrix;
-	return Math.hypot(a, c) > tolerance ? normalize([a, c]) : normalize([b, d]);
-}
-
 // Half-width of a square plot that fits all points, never smaller than `min`
 export function plotBound(points, min = 6.5) {
 	const extent = Math.max(0, ...points.flat().map(Math.abs));

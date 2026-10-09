@@ -8,6 +8,8 @@
 	// Entry range keeps every transformed vertex inside the plot
 	export let min = -3;
 	export let max = 3;
+	// Show the entries but block editing (Version 4, section 4)
+	export let locked = false;
 
 	// Same column colors as the original matrix input and the plot's basis vectors
 	const cells = [
@@ -23,10 +25,16 @@
 	}
 </script>
 
-<div class="flex items-center gap-4">
+<div
+	class="flex items-center gap-4"
+	class:cursor-not-allowed={locked}
+	title={locked ? "The matrix is locked in this section" : undefined}
+>
 	<span class="font-serif text-3xl">A =</span>
 	<div
-		class="matrix font-serif grid grid-cols-2 grid-rows-2 px-3 bg-base-200 shadow-lg shadow-neutral-content/20"
+		class="matrix font-serif grid grid-cols-2 grid-rows-2 px-3 bg-base-200 shadow-lg shadow-neutral-content/20 transition-opacity"
+		class:locked
+		inert={locked || undefined}
 	>
 		{#each cells as cell (cell.key)}
 			<div class="relative" use:labelInput={`Matrix entry ${cell.key}`}>
@@ -51,6 +59,10 @@
 <style lang="postcss">
 	.matrix {
 		box-shadow: inset 0px 0px 0px 3px white;
+	}
+
+	.matrix.locked {
+		@apply opacity-60;
 	}
 
 	/* Matches the original MatrixInput spinner style */

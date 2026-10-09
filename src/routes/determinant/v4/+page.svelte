@@ -1,10 +1,9 @@
 <script>
 	// Version 4 (final revision, SPEC §9): Version 3 plus a section on losing information
 	// 1. matrix → unit square area, 2. area ↔ determinant (no formula), 3. det = 0,
-	// 4. two inputs, one output: why det = 0 means not invertible
+	// 4. two inputs, two outputs, 5. two inputs, one output: why det = 0 means not invertible
 	import { onMount } from "svelte";
 	import { fly, fade } from "svelte/transition";
-	import NumberSpinner from "svelte-number-spinner";
 	import { base } from "$app/paths";
 	import inView from "$actions/inView.js";
 	import Meta from "$components/Meta.svelte";
@@ -15,12 +14,10 @@
 	import MatrixEntryInput from "$components/determinant/MatrixEntryInput.svelte";
 	import InputOutputPlots from "$components/determinant/InputOutputPlots.svelte";
 	import { detMatrix } from "$stores/determinant.js";
-	import { colorZ } from "$data/variables";
+	import { colorX, colorY, colorZ, colorVector } from "$data/variables";
 	import {
 		IDENTITY,
-		SINGULAR_PRESET,
 		apply,
-		nullDirection,
 		determinant,
 		transformedArea,
 		collapseKind,
@@ -56,33 +53,36 @@
 
 	const flyIn = { y: -10, duration: 300 };
 
-	// Section 4: two input vectors. Orange is the original's z-axis color; orange/yellow
-	// passed the dataviz palette validator's colorblind check on the dark background.
+	// Sections 4–5: two fixed input vectors and a fixed invertible starting matrix.
+	// Collapsing it gives [[2, 1], [1, 0.5]], which squashes the direction v − u = (1, −2)
+	// to zero, so both inputs land on (3, 1.5).
+	const START_MATRIX = { a: 2, b: 0.5, c: 1, d: 1.5 };
+	const u = [1, 1];
+	const v = [2, -1];
+	// Orange is the original's z-axis color; orange/yellow passed the dataviz palette
+	// validator's colorblind check on the dark background
 	const colorU = colorZ;
 	const colorV = "#f1fa8c";
-	const uMax = 2;
-	const slideMax = 3;
+	// Unit square and basis vectors on the two grids start hidden, to keep the focus on u and v
+	let showBasis = false;
 
-	let u = [1, 1];
-	// How far v is from u along the squashed direction
-	let slide = 1.5;
+	// The matrix can't be edited in sections 4–5; only the Collapse button changes it
+	$: locked = active >= 4;
+	$: showVectors = active >= 4;
 
-	// Keep the last squashed direction so v stays put if the matrix becomes invertible
-	let squashDir = nullDirection(SINGULAR_PRESET);
-	$: currentSquash = nullDirection($detMatrix);
-	$: if (currentSquash) squashDir = currentSquash;
-	$: v = [u[0] + slide * squashDir[0], u[1] + slide * squashDir[1]];
+	function enterSection4() {
+		// Coming down from section 3: start the story from the invertible matrix
+		if (active < 4) setMatrix(START_MATRIX);
+		active = 4;
+	}
+
+	function collapse() {
+		setMatrix(flattenOntoFirstColumn($detMatrix, entryMax));
+	}
 
 	$: Au = apply($detMatrix, u);
 	$: Av = apply($detMatrix, v);
 	const fmtVec = ([x, y]) => `(${formatNumber(x)}, ${formatNumber(y)})`;
-
-	// NumberSpinner doesn't forward aria attributes, so label its inputs directly
-	function labelInputs(node) {
-		node
-			.querySelectorAll("input")
-			.forEach((input, i) => input.setAttribute("aria-label", `u ${i === 0 ? "x" : "y"}-coordinate`));
-	}
 </script>
 
 <Meta
@@ -98,7 +98,20 @@
 			<!-- Controls centered over the plot -->
 			<div class="relative flex justify-center">
 				<div class="flex items-center gap-8">
-					<MatrixEntryInput min={entryMin} max={entryMax} />
+					<!-- Basis toggle sits centered under the matrix in sections 4–5 -->
+					<div class="flex flex-col items-center gap-2">
+						<MatrixEntryInput min={entryMin} max={entryMax} {locked} />
+						{#if showVectors}
+							<button
+								class="btn btn-xs btn-outline"
+								aria-pressed={showBasis}
+								on:click={() => (showBasis = !showBasis)}
+								transition:fade={{ duration: 200 }}
+							>
+								{showBasis ? "Hide" : "Show"} basis vectors & unit square
+							</button>
+						{/if}
+					</div>
 
 					<div class="flex flex-col gap-1 text-xl min-w-[13rem]">
 						<div>Area: <b class="text-2xl">{formatNumber(area)}</b></div>
@@ -120,16 +133,17 @@
 
 				<button
 					class="btn btn-sm btn-outline absolute right-0 top-0"
+					disabled={locked}
 					on:click={() => setMatrix(IDENTITY)}
 				>
 					Reset
 				</button>
 			</div>
 
-			<!-- Section 4 swaps the single plot for input/output planes -->
-			{#if active === 4}
+			<!-- Sections 4–5 swap the single plot for input/output planes -->
+			{#if showVectors}
 				<div class="flex-1 min-h-0" in:fade={{ duration: 300 }}>
-					<InputOutputPlots matrix={$detMatrix} {u} {v} {colorU} {colorV} />
+					<InputOutputPlots matrix={$detMatrix} {u} {v} {colorU} {colorV} {showBasis} />
 				</div>
 			{:else}
 				<div class="flex-1 min-h-0 bg-base-200/40 rounded-xl" in:fade={{ duration: 300 }}>
@@ -295,88 +309,73 @@
 				class="step prose prose-lg"
 				class:inactive={active !== 4}
 				use:inView={{ top: band, bottom: band }}
-				on:enter={() => (active = 4)}
+				on:enter={enterSection4}
 			>
-				<h2>4. Losing information</h2>
+				<h2>4. Two inputs, two outputs</h2>
 				<p>
-					Why can't a flattened square be stretched back? Let's follow two vectors,
-					<b>u</b> and <b>v</b>, through the matrix. The left grid shows them before
-					<Tex expr="A" />, and the right grid shows where <Tex expr="A" /> sends them.
+					Why can't a flattened square be stretched back? To find out, let's follow two
+					vectors, <span class="dot" style:background={colorU} /> <b>u</b> and
+					<span class="dot" style:background={colorV} /> <b>v</b>, through a matrix.
+					The left grid shows them before <Tex expr="A" />, and the right grid shows
+					where <Tex expr="A" /> sends them.
 				</p>
-				<Action>
-					<div class="flex flex-col gap-4 w-full not-prose text-base">
-						<p class="m-0">Move <b>u</b>, then slide <b>v</b> and watch the outputs.</p>
-
-						<div class="flex items-center gap-2" use:labelInputs>
-							<span class="dot" style:background={colorU} />
-							<span class="font-serif text-2xl italic">u</span>
-							<span class="font-serif text-2xl">= (</span>
-							<NumberSpinner bind:value={u[0]} min={-uMax} max={uMax} step={0.1} decimals={1}
-								speed={0.1} class="entry-spinner" />
-							<span class="font-serif text-2xl">,</span>
-							<NumberSpinner bind:value={u[1]} min={-uMax} max={uMax} step={0.1} decimals={1}
-								speed={0.1} class="entry-spinner" />
-							<span class="font-serif text-2xl">)</span>
-						</div>
-
-						<label class="flex flex-col gap-1">
-							<span class="flex items-center gap-2">
-								<span class="dot" style:background={colorV} />
-								Slide <i class="font-serif">v</i> along the dashed line
-							</span>
-							<input type="range" class="range range-sm" min={-slideMax} max={slideMax}
-								step="0.1" bind:value={slide} />
-						</label>
-
-						<table class="w-full text-left">
-							<thead class="opacity-70 text-sm">
-								<tr><th>Input</th><th>Output</th></tr>
-							</thead>
-							<tbody class="font-serif text-lg">
-								<tr>
-									<td><span class="dot" style:background={colorU} /> u = {fmtVec(u)}</td>
-									<td>A·u = {fmtVec(Au)}</td>
-								</tr>
-								<tr>
-									<td><span class="dot" style:background={colorV} /> v = {fmtVec(v)}</td>
-									<td>A·v = {fmtVec(Av)}</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</Action>
-
-				{#if kind === "line"}
-					<p>
-						<b>u</b> and <b>v</b> are different inputs, but <Tex expr="A" /> sends
-						both to the same output. In fact, every input on the dashed line lands on
-						that one point, and every output lands on the dashed line on the right.
-					</p>
-				{:else if kind === "point"}
-					<p>
-						<b>u</b> and <b>v</b> are different inputs, but this matrix sends
-						<i>every</i> input to the same output: the origin.
-					</p>
-				{/if}
-
 				{#if kind === "area"}
 					<p>
-						Right now <Tex expr="\det(A)" /> is {formatNumber(det)}, so <b>u</b> and
-						<b>v</b> land on different outputs. Different inputs always give different
-						outputs, so nothing is lost and the transformation can be undone.
+						We start with an invertible matrix (<Tex expr="\det(A)" /> = {formatNumber(det)}).
+						It sends <b>u</b> to {fmtVec(Au)} and <b>v</b> to {fmtVec(Av)}.
+						Two different inputs give <b>two different outputs</b>.
 					</p>
-					<button class="btn btn-sm btn-error not-prose" on:click={() => setMatrix(flattenOntoFirstColumn($detMatrix, entryMax))}>
-						Collapse it
-					</button>
+					<Action>
+						<div class="flex flex-col gap-3">
+							<p class="m-0">
+								Press the button to collapse <Tex expr="A" /> (make its determinant 0).
+							</p>
+							<button class="btn btn-sm btn-error not-prose self-start" on:click={collapse}>
+								Collapse it
+							</button>
+						</div>
+					</Action>
 				{:else}
 					<p>
-						Now imagine you are only shown the output. Did it come from <b>u</b>,
-						from <b>v</b>, or from another point on the dashed line? There's no way
-						to tell: that information has been <b>lost</b>.
+						<Tex expr="A" /> is now collapsed. Scroll down to see what happened to
+						<b>u</b> and <b>v</b>.
+					</p>
+				{/if}
+			</section>
+
+			<!-- Step 5 -->
+			<section
+				class="step prose prose-lg"
+				class:inactive={active !== 5}
+				use:inView={{ top: band, bottom: band }}
+				on:enter={() => (active = 5)}
+			>
+				<h2>5. Two inputs, one output</h2>
+				{#if kind === "area"}
+					<Action>
+						<div class="flex flex-col gap-3">
+							<p class="m-0">
+								Press the button to collapse <Tex expr="A" /> first (make its determinant
+								0).
+							</p>
+							<button class="btn btn-sm btn-error not-prose self-start" on:click={collapse}>
+								Collapse it
+							</button>
+						</div>
+					</Action>
+				{:else}
+					<p>
+						After collapsing, <Tex expr="A" /> sends both <b>u</b> and <b>v</b> to
+						{fmtVec(Au)}. Two different inputs now give <b>the same output</b>.
 					</p>
 					<p>
-						Undoing <Tex expr="A" /> would mean sending one output back to many
-						inputs at once, which no matrix can do. That's why a matrix with
+						Imagine you are only shown the output {fmtVec(Au)}. Did it come from
+						<b>u</b> or from <b>v</b>? There's no way to tell: that information has
+						been <b>lost</b>.
+					</p>
+					<p>
+						Undoing <Tex expr="A" /> would mean sending one output back to two
+						different inputs at once, which no matrix can do. That's why a matrix with
 						determinant 0 is <b>not invertible</b>.
 					</p>
 				{/if}
