@@ -397,3 +397,39 @@
   - `npm run build` succeeds with no warnings from the changed files; the prerendered page contains the new section 6 prompt.
   - **Not yet tested in a browser:** actual dragging (mouse/touch), the snap feel, keyboard movement, and the text switching as v moves.
 - **Next Steps:** User tests dragging in section 6; then possibly link versions together / from the original explainer (needs permission) and rebuild `docs/` for GitHub Pages.
+
+## Entry 24 — V4 section 6: explain where the dashed line comes from (trial)
+
+- **Task:** User asked whether not explaining where the dashed line comes from would confuse beginners. Claude Code said probably yes (students may wonder why the inputs form a line, why that direction, and may confuse it with the flattened output line) and suggested three options; recommended option 1 (one or two sentences), with an arrow visual as a follow-up only if needed. User: "All changes are committed and pushed. I think we can go ahead and try option 1, but be ready to roll back the commit if it does not work."
+- **Changes (completed, trial):** Added a paragraph to section 6, after the description of the dashed line: "Why a line? To get from u to v, you take a step of (1, −2), and the collapsed A squashes that step down to (0, 0). Adding that step (or any amount of it) doesn't change the output, so every point along it lands where u lands." Wording suggested by Claude Code.
+- **Files Modified:** [src/routes/determinant/v4/+page.svelte](./src/routes/determinant/v4/+page.svelte).
+- **Design decisions / tradeoffs:** The explanation relies on the idea that A acts on the step separately from the starting point (i.e. A(u + w) = A·u + A·w), stated intuitively rather than as a formula. That is the one mathematical leap in the sentence; if students struggle with it, the planned follow-up is a small arrow from u to v on the input grid that visibly shrinks to nothing on the output grid. The numbers are hard-coded because section 6 always uses the same collapsed matrix and u.
+- **Issues Encountered:** None.
+- **Resolution:** N/A.
+- **Testing:** Claude Code checked that v − u = (1, −2) and that the collapsed matrix [[2, 1], [1, 0.5]] sends both (1, −2) and (0.5, −1) to (0, 0). `npm run build` succeeds with no warnings; the prerendered page contains the new paragraph. Not yet reviewed in a browser by the user.
+- **Rollback plan:** Starting point is commit `5fb9fb1` (clean working tree before this change). The change is not committed; if it doesn't work, restore the page file to that commit (`git restore src/routes/determinant/v4/+page.svelte`), or revert the commit if it gets committed.
+- **Next Steps:** User reviews the paragraph and decides whether to keep it, add the arrow visual, or roll back.
+
+## Entry 25 — V4 section 6: reword the "Why a line?" explanation
+
+- **Task:** User found the Entry 24 wording confusing ("To get from u to v, you take a step of (1, −2), and the collapsed A squashes that step down to (0, 0)."). Claude Code suggested three rewordings (refer back to section 3, describe an arrow, show the arithmetic) and recommended the first. User: "Try option 1. Do you think it will be helpful to say what exactly is 'sliding along' the dashed line?" Claude Code agreed that naming what moves (v's tip, which students drag next) makes it concrete.
+- **Changes (completed):** The paragraph now reads: "Why a line? Remember how A flattened the unit square in section 3? A collapsed matrix completely flattens one direction. The dashed line points in exactly that direction, so moving the tip of v anywhere along the dashed line doesn't change where v lands."
+- **Files Modified:** [src/routes/determinant/v4/+page.svelte](./src/routes/determinant/v4/+page.svelte).
+- **Design decisions:** No new numbers or notation; ties the dashed line to the flattening students already saw in section 3, and names v's tip because students drag it right after reading this.
+- **Issues Encountered:** The user's pasted quote showed "A A". This is likely a copy-paste artifact (KaTeX writes each formula twice: once visible, once as hidden text for screen readers), not a rendering bug; not verified visually by Claude Code.
+- **Resolution:** N/A (to be confirmed by the user).
+- **Testing:** `npm run build` succeeds with no warnings; the prerendered page contains the new wording and no longer contains the Entry 24 wording. Not yet reviewed in a browser by the user.
+- **Rollback plan:** Unchanged from Entry 24: the change is uncommitted; `git restore src/routes/determinant/v4/+page.svelte` returns to commit `5fb9fb1` (without any "Why a line?" paragraph).
+- **Next Steps:** User reviews the new wording.
+
+## Entry 26 — V4 section 6: "Why a line?" in a dropdown
+
+- **Task:** "Can you add the 'Why a line?' paragraph under a dropdown."
+- **Changes (completed):** The "Why a line?" explanation (Entry 25 wording) is now inside a collapsible box: "Why a line?" is the clickable heading and the explanation shows when it's opened. It starts closed. Built with the native HTML `<details>`/`<summary>` element and daisyUI's `collapse collapse-arrow` classes (already in the project), so it is keyboard-accessible without extra code.
+- **Files Modified:** [src/routes/determinant/v4/+page.svelte](./src/routes/determinant/v4/+page.svelte).
+- **Design decisions:** Starts closed so section 6 stays short for students who don't need the explanation; curious students can open it.
+- **Issues Encountered:** None.
+- **Resolution:** N/A.
+- **Testing:** `npm run build` succeeds with no warnings; the prerendered page contains the `<details>` element, and the built CSS includes the daisyUI collapse styles. Opening and closing it has not been tried in a browser.
+- **Rollback plan:** Unchanged: uncommitted; `git restore src/routes/determinant/v4/+page.svelte` returns to commit `5fb9fb1`.
+- **Next Steps:** User reviews the dropdown.

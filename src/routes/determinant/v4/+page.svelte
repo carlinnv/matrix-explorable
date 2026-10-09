@@ -487,6 +487,17 @@
 					Does a collapsed <Tex expr="A" /> send <i>every</i> input to the same place?
 					The dashed line on the left shows every input that lands where <b>u</b> lands.
 				</p>
+				<details class="collapse collapse-arrow bg-base-200 not-prose">
+					<summary class="collapse-title text-lg font-semibold">Why a line?</summary>
+					<div class="collapse-content text-lg">
+						<p>
+							Remember how <Tex expr="A" /> flattened the unit square in section 3? A
+							collapsed matrix completely flattens one direction. The dashed line points
+							in exactly that direction, so moving the tip of <b>v</b> anywhere along the
+							dashed line doesn't change where <b>v</b> lands.
+						</p>
+					</div>
+				</details>
 				<Action>
 					<p class="m-0">
 						Drag the tip of <b>v</b> off the dashed line, then back onto it. It snaps
