@@ -11,6 +11,7 @@
 		UNIT_SQUARE,
 		apply,
 		transformUnitSquare,
+		nullDirection,
 		plotBound,
 		isNearlyZero
 	} from "$utils/determinant.js";
@@ -22,6 +23,11 @@
 	export let colorV;
 	// Unit square and basis vectors (and their images), for context
 	export let showBasis = true;
+	// Section 6 hint: dashed line of inputs that land on the same output as u
+	export let showInputLine = false;
+
+	$: n = nullDirection(matrix);
+	$: hintLine = showInputLine && n ? [-20, 20].map((t) => [u[0] + t * n[0], u[1] + t * n[1]]) : null;
 
 	// Copies, because input bindings mutate the store's object in place
 	const tween = { duration: 500, easing: cubicOut };
@@ -65,6 +71,20 @@
 				/>
 				<Arrow {pt} to={[1, 0]} color={colorX} width={0.05} head={0.22} />
 				<Arrow {pt} to={[0, 1]} color={colorY} width={0.05} head={0.22} />
+			{/if}
+
+			{#if hintLine}
+				{@const [p1, p2] = hintLine.map(pt)}
+				<line
+					x1={p1[0]}
+					y1={p1[1]}
+					x2={p2[0]}
+					y2={p2[1]}
+					stroke={colorU}
+					stroke-opacity="0.7"
+					stroke-width="0.05"
+					stroke-dasharray="0.2 0.15"
+				/>
 			{/if}
 
 			<Arrow {pt} to={u} color={colorU} />

@@ -4,6 +4,7 @@
 	// 4. two inputs, two outputs, 5. two inputs, one output: why det = 0 means not invertible
 	import { onMount } from "svelte";
 	import { fly, fade } from "svelte/transition";
+	import NumberSpinner from "svelte-number-spinner";
 	import { base } from "$app/paths";
 	import inView from "$actions/inView.js";
 	import Meta from "$components/Meta.svelte";
@@ -26,6 +27,7 @@
 		entriesInRange,
 		onInputGrid,
 		flattenOntoFirstColumn,
+		isNearlyZero,
 		formatNumber
 	} from "$utils/determinant.js";
 
@@ -57,8 +59,13 @@
 	// Collapsing it gives [[2, 1], [1, 0.5]], which squashes the direction v − u = (1, −2)
 	// to zero, so both inputs land on (3, 1.5).
 	const START_MATRIX = { a: 2, b: 0.5, c: 1, d: 1.5 };
-	const u = [1, 1];
-	const v = [2, -1];
+	const COLLAPSED_MATRIX = flattenOntoFirstColumn(START_MATRIX, entryMax);
+	const START_U = [1, 1];
+	const START_V = [2, -1];
+	// Fixed in sections 4–5, editable in section 6
+	let u = [...START_U];
+	let v = [...START_V];
+	const vectorMax = 3;
 	// Orange is the original's z-axis color; orange/yellow passed the dataviz palette
 	// validator's colorblind check on the dark background
 	const colorU = colorZ;
@@ -66,14 +73,33 @@
 	// Unit square and basis vectors on the two grids start hidden, to keep the focus on u and v
 	let showBasis = false;
 
-	// The matrix can't be edited in sections 4–5; only the Collapse button changes it
-	$: locked = active >= 4;
+	// The matrix can't be edited in sections 4–5; only the Collapse button changes it.
+	// Section 6 unlocks everything.
+	$: locked = active === 4 || active === 5;
 	$: showVectors = active >= 4;
 
 	function enterSection4() {
 		// Coming down from section 3: start the story from the invertible matrix
 		if (active < 4) setMatrix(START_MATRIX);
 		active = 4;
+	}
+
+	function enterSection5() {
+		// Coming back up from section 6: restore the story's collapsed matrix and vectors
+		// so the section 5 text (both land on the same output) stays true
+		if (active === 6) {
+			setMatrix(COLLAPSED_MATRIX);
+			u = [...START_U];
+			v = [...START_V];
+		}
+		active = 5;
+	}
+
+	// NumberSpinner doesn't forward aria attributes, so label its inputs directly
+	function labelInputs(node, name) {
+		node
+			.querySelectorAll("input")
+			.forEach((input, i) => input.setAttribute("aria-label", `${name} ${i === 0 ? "x" : "y"}-coordinate`));
 	}
 
 	function collapse() {
@@ -83,6 +109,15 @@
 	$: Au = apply($detMatrix, u);
 	$: Av = apply($detMatrix, v);
 	const fmtVec = ([x, y]) => `(${formatNumber(x)}, ${formatNumber(y)})`;
+
+	// Section 6 status
+	const samePoint = (p, q) => isNearlyZero(Math.hypot(p[0] - q[0], p[1] - q[1]), 1e-6);
+	$: sameInput = samePoint(u, v);
+	$: sameOutput = samePoint(Au, Av);
+
+	// Section 6 hint: only meaningful when A squashes the plane onto a line
+	let showHint = false;
+	$: hintAvailable = active === 6 && kind === "line";
 </script>
 
 <Meta
@@ -143,7 +178,15 @@
 			<!-- Sections 4–5 swap the single plot for input/output planes -->
 			{#if showVectors}
 				<div class="flex-1 min-h-0" in:fade={{ duration: 300 }}>
-					<InputOutputPlots matrix={$detMatrix} {u} {v} {colorU} {colorV} {showBasis} />
+					<InputOutputPlots
+						matrix={$detMatrix}
+						{u}
+						{v}
+						{colorU}
+						{colorV}
+						{showBasis}
+						showInputLine={showHint && hintAvailable}
+					/>
 				</div>
 			{:else}
 				<div class="flex-1 min-h-0 bg-base-200/40 rounded-xl" in:fade={{ duration: 300 }}>
@@ -348,7 +391,7 @@
 				class="step prose prose-lg"
 				class:inactive={active !== 5}
 				use:inView={{ top: band, bottom: band }}
-				on:enter={() => (active = 5)}
+				on:enter={enterSection5}
 			>
 				<h2>5. Two inputs, one output</h2>
 				{#if kind === "area"}
@@ -377,6 +420,89 @@
 						Undoing <Tex expr="A" /> would mean sending one output back to two
 						different inputs at once, which no matrix can do. That's why a matrix with
 						determinant 0 is <b>not invertible</b>.
+					</p>
+				{/if}
+			</section>
+
+			<!-- Step 6 -->
+			<section
+				class="step prose prose-lg"
+				class:inactive={active !== 6}
+				use:inView={{ top: band, bottom: band }}
+				on:enter={() => (active = 6)}
+			>
+				<h2>6. Play around with it</h2>
+				<p>
+					Now everything is unlocked. Change <Tex expr="A" />, <b>u</b> and <b>v</b>, and
+					watch when two different inputs end up at the same output.
+				</p>
+				<p>
+					For <Tex expr="A" /> to be impossible to undo, it's enough that <i>some</i>
+					different inputs share an output. Not every pair has to collide.
+				</p>
+				<Action>
+					<div class="flex flex-col gap-3 w-full not-prose text-base">
+						{#each [{ name: "u", color: colorU }, { name: "v", color: colorV }] as vec (vec.name)}
+							<div class="flex items-center gap-2" use:labelInputs={vec.name}>
+								<span class="dot" style:background={vec.color} />
+								<span class="font-serif text-2xl italic w-4">{vec.name}</span>
+								<span class="font-serif text-2xl">= (</span>
+								{#if vec.name === "u"}
+									<NumberSpinner bind:value={u[0]} min={-vectorMax} max={vectorMax} step={0.1}
+										decimals={1} speed={0.1} class="entry-spinner" />
+									<span class="font-serif text-2xl">,</span>
+									<NumberSpinner bind:value={u[1]} min={-vectorMax} max={vectorMax} step={0.1}
+										decimals={1} speed={0.1} class="entry-spinner" />
+								{:else}
+									<NumberSpinner bind:value={v[0]} min={-vectorMax} max={vectorMax} step={0.1}
+										decimals={1} speed={0.1} class="entry-spinner" />
+									<span class="font-serif text-2xl">,</span>
+									<NumberSpinner bind:value={v[1]} min={-vectorMax} max={vectorMax} step={0.1}
+										decimals={1} speed={0.1} class="entry-spinner" />
+								{/if}
+								<span class="font-serif text-2xl">)</span>
+							</div>
+						{/each}
+						<div class="flex flex-wrap gap-2">
+							<button class="btn btn-sm btn-error" on:click={collapse}>Collapse it</button>
+							{#if hintAvailable}
+								<button
+									class="btn btn-sm btn-outline"
+									aria-pressed={showHint}
+									on:click={() => (showHint = !showHint)}
+								>
+									{showHint ? "Hide" : "Show"} inputs that land on A·u
+								</button>
+							{/if}
+						</div>
+						{#if showHint && hintAvailable}
+							<p class="m-0 text-sm opacity-80" transition:fade={{ duration: 200 }}>
+								Every input on the dashed line lands on the same output as <b>u</b>.
+								Inputs off the line land somewhere else.
+							</p>
+						{/if}
+					</div>
+				</Action>
+				<p>
+					<Tex expr="A" /> sends <b>u</b> to {fmtVec(Au)} and <b>v</b> to {fmtVec(Av)}.
+				</p>
+				{#if sameInput}
+					<p><b>u</b> and <b>v</b> are the same input right now. Try moving one of them.</p>
+				{:else if kind === "area"}
+					<p>
+						<Tex expr="A" /> is invertible (<Tex expr="\det(A)" /> = {formatNumber(det)}),
+						so different inputs always give different outputs.
+					</p>
+				{:else if sameOutput}
+					<p>
+						Two different inputs, <b>one output</b>: from the output alone, you can't
+						tell which input it came from.
+					</p>
+				{:else}
+					<p>
+						<Tex expr="A" /> is not invertible, but these two inputs still land on
+						different outputs. Can you move <b>v</b> so it lands on the same output as
+						<b>u</b>? Stuck? Try the hint button above.
 					</p>
 				{/if}
 			</section>

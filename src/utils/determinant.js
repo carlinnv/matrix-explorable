@@ -106,6 +106,19 @@ export function flattenOntoFirstColumn(matrix, limit = 3, step = INPUT_STEP) {
 	return { a, c, b: snap(k * ux * step), d: snap(k * uy * step) };
 }
 
+// Unit direction that a singular matrix squashes to zero (A·n = 0):
+// every input on a line through u in this direction lands on A·u.
+// Returns null for an invertible matrix.
+export function nullDirection(matrix, tolerance = ZERO_TOLERANCE) {
+	if (!isSingular(matrix, tolerance)) return null;
+
+	const { a, b, c, d } = matrix;
+	// n is perpendicular to every row of A: rotate a nonzero row by 90°
+	const [x, y] = Math.hypot(a, b) > tolerance ? [-b, a] : Math.hypot(c, d) > tolerance ? [-d, c] : [1, 0];
+	const len = Math.hypot(x, y);
+	return [x / len, y / len];
+}
+
 // Half-width of a square plot that fits all points, never smaller than `min`
 export function plotBound(points, min = 6.5) {
 	const extent = Math.max(0, ...points.flat().map(Math.abs));
