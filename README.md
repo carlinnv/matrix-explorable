@@ -13,6 +13,7 @@ The original explorable, including its visual design, 3D scene and matrix-multip
 - Original live article: [yizhe-ang.github.io/matrix-explorable](https://yizhe-ang.github.io/matrix-explorable/)
 - Support the original creator: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U7U4NH69A)
 
+Original demo: 
 https://github.com/yizhe-ang/matrix-explorable/assets/17507891/2f0beee1-ddcf-4252-8247-c8a6b43b2168
 
 The original was made with:
