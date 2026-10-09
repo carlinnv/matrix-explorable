@@ -474,3 +474,13 @@
 - **Resolution:** N/A.
 - **Testing:** Checked the "adds no new dependencies" claim: `package.json` and the lock files are unchanged since commit `f1ed9ab` (before any modification work). Live-site links won't work until the site is deployed.
 - **Next Steps:** User reviews the README wording and commits it with the other pending changes.
+
+## Entry 30 — `make github` fails with "nothing to commit"
+
+- **Task:** "when i run make github, this is what i get: … nothing to commit, working tree clean / make: *** [github] Error 1"
+- **Changes (completed, suggested by Claude Code):** In the Makefile, the commit step now runs only when something is staged (`git diff --cached --quiet || git commit …`). Also fixed the typo `PHONY` → `.PHONY`.
+- **Files Modified:** [Makefile](./Makefile).
+- **Issues Encountered:** `git commit` exits with status 1 when there is nothing to commit, so `make` aborted before `git push`. Nothing had changed because the current `build/` (10:49) had already been copied to `docs/`, committed in `32776a4` and pushed; `main` was up to date with `origin/main`.
+- **Resolution:** Skip the commit when nothing is staged, so the target finishes and still runs `git push`.
+- **Testing:** `make -n github` (dry run) shows the expected commands. The real target hasn't been run since the change.
+- **Next Steps:** After future source changes, run `npm run build` before `make github`; otherwise `docs/` won't change.
