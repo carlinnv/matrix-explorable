@@ -53,6 +53,20 @@ export function collapseKind(matrix, tolerance = ZERO_TOLERANCE) {
 	return allZero ? "point" : "line";
 }
 
+// Multiply one column (0 = first, 1 = second) by k
+export function scaleColumn({ a, b, c, d }, column, k) {
+	return column === 0 ? { a: a * k, b, c: c * k, d } : { a, b: b * k, c, d: d * k };
+}
+
+// Swap the columns: same shape, mirrored, so the determinant changes sign
+export function swapColumns({ a, b, c, d }) {
+	return { a: b, b: a, c: d, d: c };
+}
+
+export function entriesInRange(matrix, min, max) {
+	return Object.values(matrix).every((x) => x >= min - ZERO_TOLERANCE && x <= max + ZERO_TOLERANCE);
+}
+
 // Format for display: up to 2 decimals, no trailing zeros, no "-0"
 export function formatNumber(x) {
 	if (isNearlyZero(x)) return "0";

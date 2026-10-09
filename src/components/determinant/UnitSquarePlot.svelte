@@ -5,12 +5,16 @@
 	import { colorX, colorY, colorVector } from "$data/variables";
 	import {
 		UNIT_SQUARE,
+		apply,
 		transformUnitSquare,
+		transformedArea,
 		collapseKind,
 		formatNumber
 	} from "$utils/determinant.js";
 
 	export let matrix;
+	// Label the transformed shape with its area (Version 2+)
+	export let showArea = false;
 
 	// Matrix entries are limited to [-3, 3], so vertices stay within |6|
 	const bound = 6.5;
@@ -28,6 +32,8 @@
 
 	$: square = transformUnitSquare($shown);
 	$: kind = collapseKind(matrix);
+	// Center of the transformed square is the image of (0.5, 0.5)
+	$: areaLabelPos = pt(apply($shown, [0.5, 0.5]));
 
 	// Transformed basis vectors: columns of A
 	$: basis = [
@@ -140,4 +146,20 @@
 			</text>
 		{/if}
 	{/each}
+
+	{#if showArea}
+		<text
+			x={areaLabelPos[0]}
+			y={areaLabelPos[1] + 0.13}
+			text-anchor="middle"
+			font-size="0.4"
+			fill="white"
+			stroke={colors.slate["950"]}
+			stroke-width="0.1"
+			paint-order="stroke"
+			class="font-sans font-bold select-none"
+		>
+			area {formatNumber(transformedArea(matrix))}
+		</text>
+	{/if}
 </svg>
