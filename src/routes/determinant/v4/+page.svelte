@@ -14,7 +14,7 @@
 	import MatrixEntryInput from "$components/determinant/MatrixEntryInput.svelte";
 	import InputOutputPlots from "$components/determinant/InputOutputPlots.svelte";
 	import { detMatrix } from "$stores/determinant.js";
-	import { colorX, colorY, colorZ, colorVector } from "$data/variables";
+	import { colorZ } from "$data/variables";
 	import {
 		IDENTITY,
 		apply,

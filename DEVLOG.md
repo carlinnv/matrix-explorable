@@ -305,3 +305,14 @@
 - **Resolution:** N/A.
 - **Testing (by Claude Code):** Server-rendered `InputOutputPlots` for the start and collapsed matrices with the toggle off and on: off draws only u, v, A·u, A·v (4 arrows); on adds the two squares and 4 basis arrows (8 arrows); no NaN. `npm run build` succeeds with no warnings from the changed files. The button itself and the legend have not been tested in a browser.
 - **Next Steps:** User tests the toggle; then possibly link versions together / from the original explainer (needs permission) and rebuild `docs/` for GitHub Pages.
+
+## Entry 19 — V4: move basis toggle, remove legend
+
+- **Task:** "Can you move the toggle so that it is centered on the matrix A? Also, you don't have to add the color legend next to it."
+- **Changes (completed):** The "Show / Hide basis vectors & unit square" button now sits directly under the matrix input, centered on it, and only appears in sections 4–5. Removed the button row and the color legend above the two grids. Removed the now-unused color imports from the page.
+- **Files Modified:** [src/routes/determinant/v4/+page.svelte](./src/routes/determinant/v4/+page.svelte).
+- **Design decisions:** The button is centered on the whole matrix input component, which includes the "A =" label, so it sits slightly left of the bracketed entries' exact center.
+- **Issues Encountered:** None.
+- **Resolution:** N/A.
+- **Testing:** `npm run build` succeeds with no warnings from the changed file. Placement not yet checked in a browser.
+- **Next Steps:** User checks the placement in the browser.
